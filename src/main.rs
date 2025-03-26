@@ -1,13 +1,11 @@
+use clearscreen::clear;
 use rand::seq::IndexedRandom;
 use std::env;
 use std::fs;
 use std::path::Path;
-use std::thread;
-use std::time::Duration;
 
 const PATH_OF_LIST: &str = "~/.config/wezterm/list_of_wallpapers.txt";
 const PATH_OF_CONFIG: &str = "~/.config/wezterm/wezterm.lua";
-const INTERVAL_SECONDS: u64 = 600;
 const PATH_OF_IMAGES: &str = "well/wallpaper/";
 
 fn expand_tilde(path: &str) -> String {
@@ -61,11 +59,18 @@ fn update_config_file(config_path: &str, new_image: &str) {
 
 fn main() {
     loop {
+        let _ = clear();
+        println!("Press Enter to change the wallpaper or Ctrl+C to exit...");
+
+        let mut input = String::new();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
         if let Some(new_image) = select_random_wallpaper(PATH_OF_LIST) {
             update_config_file(PATH_OF_CONFIG, &new_image);
         } else {
             eprintln!("Could not select a wallpaper.");
         }
-        thread::sleep(Duration::from_secs(INTERVAL_SECONDS));
     }
 }

@@ -1,9 +1,10 @@
 [package]
-name = "wezterm_background"
+name = "wezback"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.97"
 clearscreen = "4.0.1"
 rand = "0.9.0"
 random = "0.14.0"

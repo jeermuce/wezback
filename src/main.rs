@@ -60,10 +60,8 @@ fn load_wezback_config() -> Result<(String, String, String)> {
 
 fn load_list_of_images(path_of_images: &str) -> Result<Vec<String>, Error> {
     let expanded_path_of_images = expand_tilde(path_of_images);
-    println!("Expanded path: {}", expanded_path_of_images); // Print expanded path
 
     let wallpaper_dir = PathBuf::from_str(&expanded_path_of_images)?.canonicalize()?;
-    println!("Canonical path: {:?}", wallpaper_dir); // Print canonical path
 
     let paths = fs::read_dir(&wallpaper_dir)?;
 
@@ -72,18 +70,15 @@ fn load_list_of_images(path_of_images: &str) -> Result<Vec<String>, Error> {
     let home = env::var_os("HOME")
         .ok_or_else(|| anyhow::anyhow!("HOME environment variable not found"))?;
     let home_path = Path::new(&home);
-    println!("HOME path: {:?}", home_path); // Print HOME path
 
     for entry in paths {
         let entry = entry?;
         let path = entry.path();
-        println!("Processing file: {:?}", path); // Print each file being processed
 
         let extension = match path.extension().and_then(OsStr::to_str) {
             Some(ext) => ext,
             None => continue,
         };
-        println!("File extension: {}", extension); // Print file extension
 
         if EXTENSIONS.contains(&extension) {
             let stripped_path = match path.strip_prefix(home_path) {
@@ -91,7 +86,6 @@ fn load_list_of_images(path_of_images: &str) -> Result<Vec<String>, Error> {
                 Err(_) => continue,
             };
 
-            println!("Stripped path: {}", stripped_path); // Print stripped path
             images.push(stripped_path);
         }
     }

@@ -14,9 +14,8 @@ use std::process;
 use std::str::FromStr;
 
 const PATH_OF_CONFIG: &str = "~/.config/wezback";
-const EXTENSIONS: [&str; 13] = [
-    "jpeg", "jpg", "png", "gif", "bmp", "ico", "webp", "webm", "tiff", "pnm", "dds", "tga",
-    "farbfeld",
+const EXTENSIONS: [&str; 12] = [
+    "jpeg", "jpg", "png", "gif", "bmp", "ico", "webp", "tiff", "pnm", "dds", "tga", "farbfeld",
 ];
 fn expand_tilde(path: &str) -> String {
     if path.starts_with("~") {

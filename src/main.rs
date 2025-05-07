@@ -1,6 +1,5 @@
 use anyhow::Context;
-use anyhow::Error;
-use anyhow::Result;
+use anyhow::{Error, Result};
 use clearscreen::clear;
 use rand::seq::IndexedRandom;
 use std::env;
@@ -12,12 +11,11 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
-
 const PATH_OF_CONFIG: &str = "~/.config/wezback";
 const EXTENSIONS: [&str; 12] = [
     "jpeg", "jpg", "png", "gif", "bmp", "ico", "webp", "tiff", "pnm", "dds", "tga", "farbfeld",
 ];
-fn expand_tilde(path: &str) -> String {
+fn expand_tilde(path: &str) -> Result<String, Error> {
     if path.starts_with("~") {
         let home = match env::var_os("HOME") {
             Some(v) => v.display().to_string(),
@@ -26,15 +24,14 @@ fn expand_tilde(path: &str) -> String {
                 process::exit(-1)
             }
         };
-        return path.replacen("~", &home, 1);
+        return Ok(path.replacen("~", &home, 1));
     }
-    path.to_string()
+    Ok(path.to_string())
 }
 
 fn load_wezback_config() -> Result<(String, String, String)> {
-    let config = expand_tilde(PATH_OF_CONFIG);
-    let config_contents = fs::read_to_string(&config)
-        .with_context(|| format!("Failed to read config file: {}", config))?;
+    let config = expand_tilde(PATH_OF_CONFIG)?;
+    let config_contents = fs::read_to_string(&config)?;
 
     let mut images = None;
     let mut wezlua = None;
@@ -51,14 +48,14 @@ fn load_wezback_config() -> Result<(String, String, String)> {
     }
 
     Ok((
-        images.context("Missing 'images' key in config")?,
-        wezlua.context("Missing 'wezlua' key in config")?,
-        animations.context("Missing 'images' key in config")?,
+        images.context("Missing 'images' key in config")??,
+        wezlua.context("Missing 'wezlua' key in config")??,
+        animations.context("Missing 'images' key in config")??,
     ))
 }
 
 fn load_list_of_images(path_of_images: &str) -> Result<Vec<String>, Error> {
-    let expanded_path_of_images = expand_tilde(path_of_images);
+    let expanded_path_of_images = expand_tilde(path_of_images)?;
 
     let wallpaper_dir = PathBuf::from_str(&expanded_path_of_images)?.canonicalize()?;
 
@@ -92,25 +89,18 @@ fn load_list_of_images(path_of_images: &str) -> Result<Vec<String>, Error> {
     Ok(images)
 }
 
-fn select_random_wallpaper(images: &Vec<String>) -> Option<String> {
+fn select_random_wallpaper(images: &[String]) -> Option<String> {
     images.choose(&mut rand::rng()).map(|s| s.to_string())
 }
 
-fn update_config_file(config_path: &str, new_image: &str) {
+fn update_config_file(config_path: &str, new_image: &str) -> Result<()> {
     let new_image = new_image.to_string();
     let conf_line = format!("local image_path = home .. '/{}'", &new_image);
 
-    let expanded_path = expand_tilde(config_path);
+    let expanded_path = expand_tilde(config_path)?;
     let path = Path::new(&expanded_path);
 
-    let config_contents = match fs::read_to_string(path) {
-        Ok(contents) => contents,
-        Err(e) => {
-            eprintln!("Error reading config file: {}", e);
-            return;
-        }
-    };
-
+    let config_contents = fs::read_to_string(path)?;
     let updated_contents = config_contents
         .lines()
         .map(|line| {
@@ -123,11 +113,8 @@ fn update_config_file(config_path: &str, new_image: &str) {
         .collect::<Vec<String>>()
         .join("\n");
 
-    if let Err(e) = fs::write(path, updated_contents) {
-        eprintln!("Error writing config file: {}", e);
-    } else {
-        println!("Updated config with new image: {}", &conf_line);
-    }
+    fs::write(path, updated_contents)?;
+    Ok(())
 }
 use clap::Parser;
 
@@ -160,7 +147,7 @@ fn main() -> Result<()> {
 
     if args.once {
         if let Some(new_image) = select_random_wallpaper(&images) {
-            update_config_file(&path_of_wezlua, &new_image);
+            update_config_file(&path_of_wezlua, &new_image)?;
         } else {
             eprintln!("Could not select a wallpaper.");
         }
@@ -186,7 +173,7 @@ animations = \"[location of animated images, absolute or relative to home]\""
 
     loop {
         if let Some(new_image) = select_random_wallpaper(&images) {
-            update_config_file(&path_of_wezlua, &new_image);
+            update_config_file(&path_of_wezlua, &new_image)?;
         } else {
             eprintln!("Could not select a wallpaper.");
         }
